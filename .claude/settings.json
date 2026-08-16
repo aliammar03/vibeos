@@ -1,0 +1,5 @@
+{
+  "enabledPlugins": {
+    "nixos-managing@nixos-management-skill": true
+  }
+}
