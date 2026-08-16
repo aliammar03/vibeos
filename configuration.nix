@@ -78,6 +78,8 @@
     claude-code
     ripgrep # fast recursive grep (`rg`)
     fd # fast, user-friendly `find` alternative
+    jq # command-line JSON processor -- avoids fragile `grep` on JSON output
+    shellcheck # static analysis linter for shell scripts (lints scripts/delegate.sh)
     # Coding-agent CLI used as the delegated worker. Binary is `pi`.
     # 26.05 ships 0.75.4 (unstable has 0.84.1) -- if we ever need a newer
     # flag, that's the reason to reach for an overlay.

@@ -11,6 +11,26 @@ This repo IS my NixOS system config (NixOS-WSL). You edit it, rebuild, and roll 
   `switch` and `generations` (activation/rollback) are deliberately NOT pre-approved —
   always ask me before using them, same as the raw `nixos-rebuild switch` command.
 
+## Delegating work (save my Claude budget)
+`scripts/delegate.sh` hands a scoped task to GLM 5.2 (OpenRouter) running as the
+unprivileged `piworker` account, then hands the diff back for you to review.
+Roughly 1c per task vs ~$1.50 on Opus — prefer it for mechanical work.
+
+- Scout first: `./scripts/delegate.sh --scout <slug>` (read-only tools, no edits).
+  Exploration is what costs the most, so read the worker's report instead of
+  opening a dozen files yourself.
+- Worker: `./scripts/delegate.sh --allow <files> --brief <file> <slug>`
+- Review: fetch the `result.bundle` it prints, diff, then merge. **Never run `git`
+  inside `/var/lib/pi-tasks/<slug>/repo`** — that's a repo the worker controls, and
+  git executes config from the repo it operates on.
+- The script re-runs the acceptance command itself. Trust that exit code, not the
+  worker's summary — cheap models report success they didn't verify.
+- Delegate mechanical work with a checkable definition of done. Keep architecture,
+  ambiguous requirements, debugging, and anything under "Do NOT touch" below on the
+  expensive model.
+- Needs the `pitasks` group in the calling shell; use `sg pitasks -c '...'` if the
+  session predates it.
+
 ## Every change, in order
 1. Verify every package/option name via the `nixos` MCP server before writing it.
    Never guess an option path.
