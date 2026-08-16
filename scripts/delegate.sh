@@ -118,13 +118,23 @@ git -C "$TASKDIR/repo" checkout -q -b "task/$SLUG"
     echo "- (unrestricted — but stay close to the task)"
   fi
   echo
-  echo "## Acceptance command"
-  echo
-  echo 'Run this from the repository root before you finish. It must exit 0.'
-  echo
-  echo '```'
-  echo "$ACCEPT"
-  echo '```'
+  if (( SCOUT )); then
+    # A scout has no bash tool, so telling it to run a command would just
+    # produce an apology for not being able to.
+    echo "## Output"
+    echo
+    echo 'This is a read-only investigation. You have no shell and no edit'
+    echo 'tools. Do not attempt to change anything or run any command --'
+    echo 'report your findings as your final message.'
+  else
+    echo "## Acceptance command"
+    echo
+    echo 'Run this from the repository root before you finish. It must exit 0.'
+    echo
+    echo '```'
+    echo "$ACCEPT"
+    echo '```'
+  fi
 } >"$TASKDIR/TASK.md"
 
 cp "$SYSTEM_MD" "$TASKDIR/SYSTEM.md"
