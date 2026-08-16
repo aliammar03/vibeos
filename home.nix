@@ -44,6 +44,10 @@
 
   programs.btop.enable = true;
 
+  # Moved here from environment.systemPackages so the catppuccin module
+  # can theme it — it only themes home-manager-managed programs.
+  programs.bat.enable = true;
+
   # ── Look and feel ────────────────────────────────────────────────────
   # One switch themes every supported program we have installed: bat,
   # btop, delta, eza, fzf, starship, zellij, zsh-syntax-highlighting.
