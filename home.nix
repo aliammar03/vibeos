@@ -1,5 +1,9 @@
 { pkgs, ... }:
 {
+  # Split out because it's long and self-contained: the fastfetch config and
+  # login greeting (`vibe`).
+  imports = [ ./modules/landing.nix ];
+
   # Bumping this is a Home Manager data-format migration, not a "what
   # version am I on" field. Leave it alone once set.
   home.stateVersion = "26.05";
