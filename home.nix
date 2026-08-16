@@ -36,9 +36,92 @@
   # Also sets ls/ll/la/lt/lla aliases for zsh via enableZshIntegration.
   programs.eza.enable = true;
   programs.eza.enableZshIntegration = true;
+  programs.eza.git = true; # show per-file git status in listings
+  programs.eza.icons = "auto"; # filetype icons — needs the Nerd Font
 
   # Multiplexer available on demand; not auto-started on shell open.
   programs.zellij.enable = true;
 
   programs.btop.enable = true;
+
+  # ── Look and feel ────────────────────────────────────────────────────
+  # One switch themes every supported program we have installed: bat,
+  # btop, delta, eza, fzf, starship, zellij, zsh-syntax-highlighting.
+  # Module is registered in configuration.nix (home-manager.sharedModules).
+  catppuccin.enable = true;
+  catppuccin.flavor = "mocha";
+  catppuccin.accent = "mauve";
+
+  # Custom two-line framed prompt. Catppuccin's starship module supplies
+  # the `catppuccin_mocha` palette (so the colour names below resolve) and
+  # sets `format` with mkDefault, which this overrides.
+  #
+  # Everything you type starts at the same column regardless of how long
+  # the path or branch name is, because the input line is its own row.
+  programs.starship.settings = {
+    add_newline = true;
+
+    format =
+      "[╭─](surface2)"
+      + "$directory$git_branch$git_status$nix_shell$cmd_duration"
+      + "$line_break"
+      + "[╰─](surface2)$character";
+
+    directory = {
+      format = "[ $path]($style)[$read_only]($read_only_style) ";
+      style = "bold mauve";
+      truncation_length = 4;
+      truncation_symbol = "…/";
+      truncate_to_repo = true;
+      read_only = " ";
+      read_only_style = "red";
+    };
+
+    git_branch = {
+      format = "[$symbol$branch]($style) ";
+      symbol = " ";
+      style = "bold pink";
+    };
+
+    # `\${count}` is escaped so Nix passes the literal ${count} through to
+    # starship, which does its own substitution.
+    git_status = {
+      format = "([$all_status$ahead_behind]($style) )";
+      style = "bold peach";
+      ahead = "⇡\${count}";
+      behind = "⇣\${count}";
+      diverged = "⇕⇡\${ahead_count}⇣\${behind_count}";
+      modified = "!\${count}";
+      staged = "+\${count}";
+      untracked = "?\${count}";
+      deleted = "✘\${count}";
+      renamed = "»\${count}";
+      conflicted = "=\${count}";
+      stashed = "≡";
+    };
+
+    # Shows when you're inside a `nix develop` / `nix-shell`.
+    nix_shell = {
+      format = "[$symbol$state]($style) ";
+      symbol = " ";
+      style = "bold blue";
+    };
+
+    # Only appears for commands slower than 2s.
+    cmd_duration = {
+      format = "[ $duration]($style) ";
+      style = "yellow";
+      min_time = 2000;
+    };
+
+    character = {
+      success_symbol = "[❯](bold green)";
+      error_symbol = "[❯](bold red)";
+      vimcmd_symbol = "[❮](bold green)";
+    };
+
+    # Single-user WSL box — no value in showing who/where on every prompt.
+    username.disabled = true;
+    hostname.disabled = true;
+  };
 }

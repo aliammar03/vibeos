@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, catppuccin, ... }:
 {
   # WSL integration (module comes from the flake input, not a channel path)
   wsl.enable = true;
@@ -45,6 +45,19 @@
   home-manager.useUserPackages = true;
   home-manager.backupFileExtension = "hm-backup";
   home-manager.users.aliammar = import ./home.nix;
+
+  # Makes `catppuccin.*` options available inside home.nix.
+  home-manager.sharedModules = [ catppuccin.homeModules.catppuccin ];
+
+  # Nerd Font — needed for the icons/glyphs in the starship prompt and eza.
+  #
+  # IMPORTANT WSL CAVEAT: this installs the font into *Linux*. Windows
+  # Terminal draws text with fonts installed in *Windows*, so this alone
+  # will NOT make the glyphs render. You also have to install the .ttf
+  # files on the Windows side and pick the font in Windows Terminal.
+  # Installing here anyway gives us a stable local path to copy from,
+  # and covers any WSLg GUI apps later.
+  fonts.packages = [ pkgs.nerd-fonts.jetbrains-mono ];
 
   # nix-agent: MCP server exposing NixOS build/diff/switch/rollback to Claude.
   # Module comes from the nix-agent flake input (see flake.nix).
