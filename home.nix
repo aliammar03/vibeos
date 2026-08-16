@@ -28,6 +28,13 @@
   # we were using before this migration.
   programs.zsh.shellAliases.ll = "eza -la";
 
+  # `gr <host> [duration]` signs a short-lived root cert for the ops agent.
+  # Lives here rather than in the skynet repo's own shell setup so it's
+  # part of this machine's declared config. Only useful on THIS box: the
+  # script needs the CA private key at ~/.skynet-ca/ops_ca, which is
+  # deliberately kept off the VM so the agent can't sign its own certs.
+  programs.zsh.shellAliases.gr = "~/skynet/bin/grant-root";
+
   programs.starship.enable = true;
   programs.starship.enableZshIntegration = true;
 
