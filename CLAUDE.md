@@ -11,23 +11,32 @@ This repo IS my NixOS system config (NixOS-WSL). You edit it, rebuild, and roll 
   `switch` and `generations` (activation/rollback) are deliberately NOT pre-approved —
   always ask me before using them, same as the raw `nixos-rebuild switch` command.
 
-## Delegating work (save my Claude budget)
+## Delegating work — do this on your own, don't ask me first
 `scripts/delegate.sh` hands a scoped task to GLM 5.2 (OpenRouter) running as the
 unprivileged `piworker` account, then hands the diff back for you to review.
-Roughly 1c per task vs ~$1.50 on Opus — prefer it for mechanical work.
+Roughly 1c per task vs ~$1.50 on Opus.
 
-- Scout first: `./scripts/delegate.sh --scout <slug>` (read-only tools, no edits).
-  Exploration is what costs the most, so read the worker's report instead of
-  opening a dozen files yourself.
-- Worker: `./scripts/delegate.sh --allow <files> --brief <file> <slug>`
+Two triggers. When one fires, act on it — I should not have to ask you to:
+
+1. **About to open more than ~3 files to understand something?** Stop and scout:
+   `./scripts/delegate.sh --scout <slug>`, then read the report instead.
+   Exploration is what actually runs up the bill, not writing.
+2. **About to make a mechanical edit with a checkable definition of done?**
+   (adding a package, renaming an option, applying one pattern across files)
+   Delegate it: `./scripts/delegate.sh --allow <files> --brief <file> <slug>`,
+   then show me the reviewed diff.
+
+Delegating is the default for that work, not a suggestion to raise with me. Just
+report what you delegated and what came back.
+
 - Review: fetch the `result.bundle` it prints, diff, then merge. **Never run `git`
   inside `/var/lib/pi-tasks/<slug>/repo`** — that's a repo the worker controls, and
   git executes config from the repo it operates on.
 - The script re-runs the acceptance command itself. Trust that exit code, not the
   worker's summary — cheap models report success they didn't verify.
-- Delegate mechanical work with a checkable definition of done. Keep architecture,
-  ambiguous requirements, debugging, and anything under "Do NOT touch" below on the
-  expensive model.
+- Do NOT delegate: architecture decisions, ambiguous requirements, debugging weird
+  failures, or anything under "Do NOT touch" below. Those stay on the expensive
+  model — a cheap worker there just produces a bad diff you have to review.
 - Needs the `pitasks` group in the calling shell; use `sg pitasks -c '...'` if the
   session predates it.
 
