@@ -21,6 +21,8 @@
   security.sudo.wheelNeedsPassword = false;
 
   # Tools — sets you up for GitHub (Phase 2.5) and Claude (Phase 3) in one rebuild.
+  # Personal/dotfile-level tools (zellij, fzf, eza, delta, btop, and their
+  # shell integration) live in home.nix now — see home-manager wiring below.
   # Claude can add more here later.
   environment.systemPackages = with pkgs; [
     git
@@ -29,33 +31,20 @@
     ripgrep # fast recursive grep (`rg`)
     fd # fast, user-friendly `find` alternative
     bat # `cat` with syntax highlighting
-    zellij # terminal multiplexer
-    fzf # fuzzy finder
-    eza # modern `ls` (aliased below)
-    delta # syntax-highlighting pager for `git diff`
-    btop # resource monitor
   ];
 
-  # Modern terminal environment: zsh + starship + zoxide, aliases for eza.
+  # zsh: system-level registration only (/etc/shells, /etc/zshrc, and
+  # completion for system packages). Plugins/aliases/prompt are in home.nix.
   programs.zsh.enable = true;
   programs.zsh.enableCompletion = true;
-  programs.zsh.autosuggestions.enable = true;
-  programs.zsh.syntaxHighlighting.enable = true;
 
-  programs.starship.enable = true;
-
-  programs.zoxide.enable = true;
-  programs.zoxide.enableZshIntegration = true;
-
-  programs.fzf.keybindings = true;
-  programs.fzf.fuzzyCompletion = true;
-
-  environment.shellAliases = {
-    ls = "eza";
-    ll = "eza -la";
-    la = "eza -a";
-    lt = "eza --tree";
-  };
+  # home-manager: per-user dotfiles (see home.nix). useGlobalPkgs avoids a
+  # second nixpkgs evaluation; backupFileExtension means activation renames
+  # a conflicting pre-existing dotfile instead of refusing to switch.
+  home-manager.useGlobalPkgs = true;
+  home-manager.useUserPackages = true;
+  home-manager.backupFileExtension = "hm-backup";
+  home-manager.users.aliammar = import ./home.nix;
 
   # nix-agent: MCP server exposing NixOS build/diff/switch/rollback to Claude.
   # Module comes from the nix-agent flake input (see flake.nix).
