@@ -1,4 +1,4 @@
-# This NixOS config — rules for Claude
+# Rules for Claude
 
 This repo IS my NixOS system config (NixOS-WSL). You edit it, rebuild, and roll back.
 
