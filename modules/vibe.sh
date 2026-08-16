@@ -19,7 +19,6 @@ MAUVE=$'\033[38;2;203;166;247m'
 GREEN=$'\033[38;2;166;227;161m'
 TEXT=$'\033[38;2;205;214;244m'
 SUBTEXT=$'\033[38;2;166;173;200m'
-OVERLAY=$'\033[38;2;108;112;134m'
 SURFACE=$'\033[38;2;88;91;112m'
 RESET=$'\033[0m'
 BOLD=$'\033[1m'
@@ -73,11 +72,9 @@ rule() {
 }
 
 # ── header ────────────────────────────────────────────────────────────────
-# One line, not a wordmark banner. The host and user are already printed by
-# fastfetch's own title row just below, so repeating them here only pads it.
+# No wordmark, no tagline — just a rule to frame the fetch. Everything worth
+# saying about this machine is in fastfetch's own title row just below.
 echo
-printf '  %s✳%s %sa claude-managed nixos%s\n' \
-  "$PEACH" "$RESET" "$OVERLAY" "$RESET"
 rule
 echo # fastfetch leaves a row below the logo, so match it above
 
