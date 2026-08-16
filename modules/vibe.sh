@@ -72,11 +72,10 @@ rule() {
 }
 
 # ── header ────────────────────────────────────────────────────────────────
-# No wordmark, no tagline — just a rule to frame the fetch. Everything worth
-# saying about this machine is in fastfetch's own title row just below.
+# There isn't one. No wordmark, no tagline, no rule: the fetch opens the
+# landing on its own, and its title row already says whose machine this is.
+# Just one blank line so the logo isn't flush against the prompt above it.
 echo
-rule
-echo # fastfetch leaves a row below the logo, so match it above
 
 # ── the actual fetch ──────────────────────────────────────────────────────
 # Config lives at ~/.config/fastfetch/config.jsonc, written by landing.nix.
