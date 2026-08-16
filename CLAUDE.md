@@ -1,4 +1,4 @@
-# VibeOS — rules for Claude
+# This NixOS config — rules for Claude
 
 This repo IS my NixOS system config (NixOS-WSL). You edit it, rebuild, and roll back.
 
