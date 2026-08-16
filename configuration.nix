@@ -27,7 +27,7 @@
     # hidden in a dotfile. Paste in the contents of the *.pub file from
     # the Ubuntu machine, keeping the whole single line.
     openssh.authorizedKeys.keys = [
-      # "ssh-ed25519 AAAAC3Nz... ali@ubuntu"
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMY3q277EOHizg5Ji/WUU7WvUi4X/ezbRPebk65lQVBJ aliammar@RK-W"
     ];
   };
 
