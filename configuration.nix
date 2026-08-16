@@ -30,6 +30,23 @@
     bat # `cat` with syntax highlighting
   ];
 
+  # nix-agent: MCP server exposing NixOS build/diff/switch/rollback to Claude.
+  # Module comes from the nix-agent flake input (see flake.nix).
+  programs.nix-agent.enable = true;
+
+  # Pins NIX_AGENT_FLAKE on the binary so it always targets THIS repo,
+  # never some other flake. Upstream calls this an anti-footgun, not a
+  # security boundary — don't rely on it to contain a hostile caller.
+  programs.nix-agent.flake = /home/aliammar/vibeos;
+
+  # Narrow NOPASSWD rules for nixos-rebuild dry-activate/switch/rollback,
+  # so nix-agent's privileged tools don't hang on a sudo password prompt.
+  # NOTE: redundant on this box — wheelNeedsPassword = false above already
+  # grants aliammar passwordless sudo for everything. Safe to delete both
+  # of these lines if that global setting stays.
+  programs.nix-agent.privilegedAutomation.enable = true;
+  programs.nix-agent.privilegedAutomation.user = "aliammar";
+
   networking.hostName = "vibeos";
 
   # Keep exactly as generated — do not bump.
