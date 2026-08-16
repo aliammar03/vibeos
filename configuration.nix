@@ -25,6 +25,9 @@
     git
     gh
     claude-code
+    ripgrep # fast recursive grep (`rg`)
+    fd # fast, user-friendly `find` alternative
+    bat # `cat` with syntax highlighting
   ];
 
   networking.hostName = "vibeos";
