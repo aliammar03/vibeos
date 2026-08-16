@@ -1,5 +1,6 @@
 {
-  "enabledPlugins": {
-    "nixos-managing@nixos-management-skill": true
-  }
+  "enabledMcpjsonServers": [
+    "nixos"
+  ],
+  "enableAllProjectMcpServers": true
 }
