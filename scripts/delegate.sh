@@ -3,6 +3,10 @@
 # delegate.sh — hand a scoped task to the cheap worker model, then hand the
 # result back for review.
 #
+# For *understanding* rather than changing, use scripts/scout.sh instead: it
+# asks the same worker a question and returns a cited report, without the clone,
+# the acceptance run, or the diff.
+#
 # The idea: an expensive planner (Claude) writes a precise brief; a cheap model
 # (GLM 5.2 via OpenRouter, driven by `pi`) does the mechanical work in an
 # isolated clone as the unprivileged `piworker` account; the planner reviews
@@ -39,14 +43,13 @@ MODEL="openrouter/z-ai/glm-5.2"
 ACCEPT='nix build --no-link --no-write-lock-file .#nixosConfigurations.vibeos.config.system.build.toplevel'
 ALLOW=""
 BRIEF_FILE=""
-SCOUT=0
 KEEP=0
 
 die() { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 note() { printf '\033[36m==>\033[0m %s\n' "$*"; }
 
 usage() {
-  sed -n '2,30p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,33p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -56,7 +59,8 @@ while [[ $# -gt 0 ]]; do
     --brief)  BRIEF_FILE=${2:?--brief needs a value}; shift 2 ;;
     --accept) ACCEPT=${2:?--accept needs a value}; shift 2 ;;
     --model)  MODEL=${2:?--model needs a value}; shift 2 ;;
-    --scout)  SCOUT=1; shift ;;
+    --scout)  die 'scouting moved to scripts/scout.sh — pass the question directly:
+       scripts/scout.sh "where is X defined?"' ;;
     --keep)   KEEP=1; shift ;;
     -h|--help) usage 0 ;;
     -*)       die "unknown option: $1" ;;
@@ -119,23 +123,13 @@ git -C "$TASKDIR/repo" checkout -q -b "task/$SLUG"
     echo "- (unrestricted — but stay close to the task)"
   fi
   echo
-  if (( SCOUT )); then
-    # A scout has no bash tool, so telling it to run a command would just
-    # produce an apology for not being able to.
-    echo "## Output"
-    echo
-    echo 'This is a read-only investigation. You have no shell and no edit'
-    echo 'tools. Do not attempt to change anything or run any command --'
-    echo 'report your findings as your final message.'
-  else
-    echo "## Acceptance command"
-    echo
-    echo 'Run this from the repository root before you finish. It must exit 0.'
-    echo
-    echo '```'
-    echo "$ACCEPT"
-    echo '```'
-  fi
+  echo "## Acceptance command"
+  echo
+  echo 'Run this from the repository root before you finish. It must exit 0.'
+  echo
+  echo '```'
+  echo "$ACCEPT"
+  echo '```'
 } >"$TASKDIR/TASK.md"
 
 cp "$SYSTEM_MD" "$TASKDIR/SYSTEM.md"
@@ -158,16 +152,7 @@ sudo chmod -R g+rX "$TASKDIR/repo"
 
 PI_ARGS=(-p "$(cat "$TASKDIR/TASK.md")" --model "$MODEL" --no-session
          --append-system-prompt "$(cat "$SYSTEM_MD")")
-if (( SCOUT )); then
-  # Scout mode: explore and report, never edit. Cheap way to keep repo
-  # exploration off the expensive model's token bill.
-  # shellcheck disable=SC2054  # pi wants ONE comma-separated argument here,
-  # not four array elements -- this is the tool allowlist, not a list of args.
-  PI_ARGS+=(--tools read,grep,find,ls)
-  note "running worker in SCOUT mode (read-only tools)"
-else
-  note "running worker on task '$SLUG' with model $MODEL"
-fi
+note "running worker on task '$SLUG' with model $MODEL"
 
 set +e
 sudo -u "$WORKER_USER" env -i \
@@ -184,11 +169,6 @@ WORKER_RC=${PIPESTATUS[0]}
 set -e
 
 note "worker exited with status $WORKER_RC (full transcript: $TASKDIR/pi-output.log)"
-
-if (( SCOUT )); then
-  note "scout run complete — no diff expected"
-  exit 0
-fi
 
 # ── Review gates ─────────────────────────────────────────────────────────
 # Everything below is the planner's check, not the worker's claim.
