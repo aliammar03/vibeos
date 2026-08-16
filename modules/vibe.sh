@@ -1,9 +1,9 @@
-# VibeOS terminal landing.
+# Terminal landing page.
 #
 # Printed by zsh on login (wired up in modules/landing.nix). Run it any time
 # with `vibe`. Set VIBE_NO_GREET=1 to keep it quiet at login.
 #
-# This is just a shell script — it frames fastfetch with a banner, a greeting
+# This is just a shell script — it frames fastfetch with a header, a greeting
 # and a tip. fastfetch itself does all the actual system probing.
 
 # Where the config repo lives; landing.nix exports this, but default sanely
@@ -19,37 +19,17 @@ MAUVE=$'\033[38;2;203;166;247m'
 GREEN=$'\033[38;2;166;227;161m'
 TEXT=$'\033[38;2;205;214;244m'
 SUBTEXT=$'\033[38;2;166;173;200m'
-OVERLAY=$'\033[38;2;108;112;134m'
 SURFACE=$'\033[38;2;88;91;112m'
 RESET=$'\033[0m'
 BOLD=$'\033[1m'
 
-# Six steps from mauve (#cba6f7) to blue (#89b4fa), one per banner row.
-GRAD=(
-  $'\033[38;2;203;166;247m'
-  $'\033[38;2;196;168;248m'
-  $'\033[38;2;184;174;250m'
-  $'\033[38;2;168;180;251m'
-  $'\033[38;2;152;185;250m'
-  $'\033[38;2;137;180;250m'
-)
-
-BANNER=(
-'██╗   ██╗██╗██████╗ ███████╗ ██████╗ ███████╗'
-'██║   ██║██║██╔══██╗██╔════╝██╔═══██╗██╔════╝'
-'██║   ██║██║██████╔╝█████╗  ██║   ██║███████╗'
-'╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║   ██║╚════██║'
-' ╚████╔╝ ██║██████╔╝███████╗╚██████╔╝███████║'
-'  ╚═══╝  ╚═╝╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝'
-)
-
 # Half about the Claude workflow on this box, half plain shell tricks — and a
 # couple of reminders that underneath the paint this is stock NixOS.
 TIPS=(
-  "ask claude for a change in plain english — it edits ~/vibeos, never the running system directly"
+  "ask claude for a change in plain english — it edits the config repo, never the running system directly"
   "\`nix-agent diff\` shows exactly what a rebuild would change, before it changes anything"
   "every change claude makes is a git commit — \`git revert HEAD\` undoes any one of them"
-  "claude has to ask before switching generations. that rule lives in ~/vibeos/CLAUDE.md"
+  "claude has to ask before switching generations. that rule lives in CLAUDE.md, in the config repo"
   "\`git -C ~/vibeos log --oneline\` is the complete history of this machine"
   "nothing here is magic — it's stock nixos. configuration.nix is the whole box"
   "a rebuild never destroys the old system. every generation is still there, still bootable"
@@ -66,9 +46,20 @@ TIPS=(
 )
 
 # ── layout ────────────────────────────────────────────────────────────────
+# The full NixOS logo is 46 columns wide; with fastfetch's padding the longest
+# value lands around column 100. Below that the fetch wraps into noise, so the
+# whole landing has a wide mode and a narrow mode.
+WIDE_AT=100
+
 cols=$(tput cols 2>/dev/null || echo 80)
+
+if [ "$cols" -ge "$WIDE_AT" ]; then
+  max=100
+else
+  max=66
+fi
 width=$((cols - 4))
-[ "$width" -gt 66 ] && width=66
+[ "$width" -gt "$max" ] && width=$max
 [ "$width" -lt 24 ] && width=24
 
 rule() {
@@ -80,26 +71,21 @@ rule() {
   printf '%s%s%s\n' "  $SURFACE" "$out" "$RESET"
 }
 
-# ── banner ────────────────────────────────────────────────────────────────
+# ── header ────────────────────────────────────────────────────────────────
+# There isn't one. No wordmark, no tagline, no rule: the fetch opens the
+# landing on its own, and its title row already says whose machine this is.
+# Just one blank line so the logo isn't flush against the prompt above it.
 echo
-if [ "$cols" -ge 50 ]; then
-  for i in 0 1 2 3 4 5; do
-    printf '  %s%s%s\n' "${GRAD[$i]}" "${BANNER[$i]}" "$RESET"
-  done
-else
-  # Too narrow for the block letters — they'd wrap into noise.
-  printf '  %s%sVIBEOS%s\n' "$BOLD" "$MAUVE" "$RESET"
-fi
-
-rule
-printf '  %s✳%s %sa claude-managed nixos%s %s·%s %s%s%s\n\n' \
-  "$PEACH" "$RESET" "$OVERLAY" "$RESET" \
-  "$SURFACE" "$RESET" \
-  "$OVERLAY" "$(uname -n)" "$RESET"
 
 # ── the actual fetch ──────────────────────────────────────────────────────
 # Config lives at ~/.config/fastfetch/config.jsonc, written by landing.nix.
-fastfetch
+# Narrow terminals get nixos_old_small instead: it's pure ASCII, so it can't
+# break in any font, and at 13 columns it leaves room for the values.
+if [ "$cols" -ge "$WIDE_AT" ]; then
+  fastfetch
+else
+  fastfetch --logo nixos_old_small
+fi
 
 rule
 
@@ -134,7 +120,7 @@ if [ -d "$FLAKE/.git" ]; then
   if [ "$dirty" -gt 0 ]; then
     noun="changes"
     [ "$dirty" -eq 1 ] && noun="change"
-    printf '  %s✳%s %sheads up%s %s·%s %s%s uncommitted %s in ~/vibeos%s\n' \
+    printf '  %s✳%s %sheads up%s %s·%s %s%s uncommitted %s in the config repo%s\n' \
       "$PEACH" "$RESET" "$PEACH" "$RESET" "$SURFACE" "$RESET" \
       "$SUBTEXT" "$dirty" "$noun" "$RESET"
   fi
@@ -142,6 +128,6 @@ fi
 
 # ── tip of the login ──────────────────────────────────────────────────────
 tip="${TIPS[$((RANDOM % ${#TIPS[@]}))]}"
-printf '  %s✳%s %stip%s %s·%s %s%s%s\n\n' \
+printf '  %s✳%s %stip%s %s·%s %s%s%s\n' \
   "$PEACH" "$RESET" "$GREEN" "$RESET" "$SURFACE" "$RESET" \
   "$SUBTEXT" "$tip" "$RESET"

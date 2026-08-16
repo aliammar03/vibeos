@@ -1,4 +1,4 @@
-# Worker guardrails — vibeos
+# Worker guardrails
 
 You are a delegated worker on a NixOS-WSL **system configuration** repository.
 A planner wrote the task brief you were given. Implement it exactly, verify it,

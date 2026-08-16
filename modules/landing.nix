@@ -22,7 +22,18 @@ let
     surface2 = "38;2;88;91;112";
   };
 
-  # The landing screen: banner + fastfetch + greeting. Kept as a real shell
+  # A horizontal rule inside the info column. A plain `separator` module would
+  # be the obvious choice, but it auto-sizes to ~15 characters with no length
+  # option, which looks accidental next to a 50-column info block. A `custom`
+  # line gives us the exact width. Used twice: under the title, and above the
+  # NixOS-specific facts at the bottom.
+  infoRule = {
+    type = "custom";
+    format = "────────────────────────────────────────────────────";
+    outputColor = mocha.surface2;
+  };
+
+  # The landing screen: header + fastfetch + greeting. Kept as a real shell
   # script (modules/vibe.sh) rather than an inline Nix string so it stays
   # readable and doesn't need every $ and quote escaped.
   vibe = pkgs.writeShellScriptBin "vibe" ''
@@ -47,13 +58,20 @@ in
   programs.fastfetch.settings = {
     logo = {
       type = "builtin";
-      source = "nixos_small";
+      # The full "NixOS" logo, NOT "nixos_small". The small one is drawn with
+      # Symbols for Legacy Computing (U+1FB38 and friends) — a Unicode block
+      # almost no font actually ships, so it renders as half snowflake, half
+      # tofu. The full logo uses only U+2580–259F block elements, which every
+      # font that can draw a block at all supports. It costs 20 rows and 46
+      # columns; see the width guard in vibe.sh for what happens when the
+      # terminal is too narrow for that.
+      source = "NixOS";
       color = {
         "1" = mocha.blue;
         "2" = mocha.mauve;
       };
-      # top = 0 because the greeter already prints a blank line after the
-      # banner; anything more and the fetch drifts away from it.
+      # top = 0 because the greeter already prints a blank line above the
+      # fetch; anything more and the logo drifts away from the header rule.
       padding = {
         top = 0;
         left = 2;
@@ -94,6 +112,13 @@ in
     # Keys are lowercase to match the greeter, and coloured in a running
     # gradient down the list rather than all one colour.
     modules = [
+      # Two blank rows so the info column sits centred against the 20-row
+      # logo instead of hanging off the top of it.
+      { type = "break"; }
+      { type = "break"; }
+
+      { type = "title"; } # user@host — the only place the hostname appears
+      infoRule
       {
         type = "os";
         key = "  os";
@@ -147,15 +172,7 @@ in
         showIpv6 = false;
       }
 
-      # A plain `separator` module would be the obvious choice, but it
-      # auto-sizes to ~15 characters with no length option, which looks
-      # accidental next to a 50-column info block. A `custom` line gives us
-      # the exact width.
-      {
-        type = "custom";
-        format = "──────────────────────────────────────────────────";
-        outputColor = mocha.surface2;
-      }
+      infoRule
 
       # ── the part a stock neofetch can't tell you ──────────────────────
       # Which generation you're actually running, and when you switched to it.
@@ -184,10 +201,6 @@ in
         keyColor = mocha.peach;
         text = "printf 'claude-code ${pkgs.claude-code.version}'";
       }
-
-      { type = "break"; }
-      { type = "colors"; } # the 16 ANSI colours, as a swatch strip
-      { type = "break"; }
     ];
   };
 

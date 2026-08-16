@@ -1,5 +1,5 @@
 {
-  description = "VibeOS - Claude-managed NixOS on WSL";
+  description = "Claude-managed NixOS on WSL";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
