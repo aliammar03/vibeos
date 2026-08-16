@@ -61,7 +61,12 @@ report what you delegated and what came back.
   (GitHub user is `aliammar03`; the Linux user is `aliammar` — don't conflate them.)
 - For non-trivial changes: make a branch, commit, `git push -u origin <branch>`,
   then `gh pr create --fill`. Summarize the diff for me and let me merge.
-- Small/obvious changes may go straight to `main` only if I say so.
+- **Standing authorization — no PR needed, push straight to `main`:**
+  changes to `*.md` files, and comment-only changes to scripts. Commit, push,
+  tell me what you changed. Don't ask first, and don't open a PR for these.
+- **Everything else still gets a branch + PR**: any `.nix` file, and any change
+  that alters what a script actually does. The gate is there because those
+  change the system that gets activated; docs and comments cannot.
 - After a merge: `git checkout main && git pull` BEFORE rebuilding.
 - Never commit secrets (tokens, passwords, private keys) into any .nix file.
 
