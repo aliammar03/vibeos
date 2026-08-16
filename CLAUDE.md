@@ -12,14 +12,13 @@ This repo IS my NixOS system config (NixOS-WSL). You edit it, rebuild, and roll 
   always ask me before using them, same as the raw `nixos-rebuild switch` command.
 
 ## Delegating work — do this on your own, don't ask me first
-`scripts/delegate.sh` hands a scoped task to GLM 5.2 (OpenRouter) running as the
-unprivileged `piworker` account, then hands the diff back for you to review.
-Roughly 1c per task vs ~$1.50 on Opus.
+Two scripts hand work to GLM 5.2 (OpenRouter) running as the unprivileged
+`piworker` account. Roughly 1c per task vs ~$1.50 on Opus.
 
 Two triggers. When one fires, act on it — I should not have to ask you to:
 
 1. **About to open more than ~3 files to understand something?** Stop and scout:
-   `./scripts/delegate.sh --scout <slug>`, then read the report instead.
+   `./scripts/scout.sh "<your question>"`, then read the report it prints.
    Exploration is what actually runs up the bill, not writing.
 2. **About to make a mechanical edit with a checkable definition of done?**
    (adding a package, renaming an option, applying one pattern across files)
@@ -29,9 +28,18 @@ Two triggers. When one fires, act on it — I should not have to ask you to:
 Delegating is the default for that work, not a suggestion to raise with me. Just
 report what you delegated and what came back.
 
-- Review: fetch the `result.bundle` it prints, diff, then merge. **Never run `git`
-  inside `/var/lib/pi-tasks/<slug>/repo`** — that's a repo the worker controls, and
-  git executes config from the repo it operates on.
+- Scouting: the question is the whole argument — no brief file, no slug, nothing
+  to clean up. You get an ANSWER / EVIDENCE / GAPS report with `file:line`
+  citations; the scout's transcript stays on disk, which is the point. Open the
+  files it cites, not the ones it didn't. Scouts run in parallel, so ask three
+  questions at once when you have three. `--files a,b` seeds it with a starting
+  point; `--full` shows its reasoning when a report looks wrong.
+- A scout sees your uncommitted edits but has no `.git`, so it can't answer
+  questions about history. It has bash for read-only inspection (`nix eval` and
+  friends) and a snapshot it physically cannot write to.
+- Review a delegation: fetch the `result.bundle` it prints, diff, then merge.
+  **Never run `git` inside `/var/lib/pi-tasks/<slug>/repo`** — that's a repo the
+  worker controls, and git executes config from the repo it operates on.
 - The script re-runs the acceptance command itself. Trust that exit code, not the
   worker's summary — cheap models report success they didn't verify.
 - Do NOT delegate: architecture decisions, ambiguous requirements, debugging weird
