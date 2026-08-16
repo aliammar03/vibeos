@@ -113,6 +113,7 @@ git -C "$TASKDIR/repo" checkout -q -b "task/$SLUG"
   echo "## Files you may modify"
   echo
   if [[ -n $ALLOW ]]; then
+    # shellcheck disable=SC2016  # the backticks are literal markdown, not expansion
     tr ',' '\n' <<<"$ALLOW" | sed 's/^/- `/; s/$/`/'
   else
     echo "- (unrestricted — but stay close to the task)"
@@ -160,6 +161,8 @@ PI_ARGS=(-p "$(cat "$TASKDIR/TASK.md")" --model "$MODEL" --no-session
 if (( SCOUT )); then
   # Scout mode: explore and report, never edit. Cheap way to keep repo
   # exploration off the expensive model's token bill.
+  # shellcheck disable=SC2054  # pi wants ONE comma-separated argument here,
+  # not four array elements -- this is the tool allowlist, not a list of args.
   PI_ARGS+=(--tools read,grep,find,ls)
   note "running worker in SCOUT mode (read-only tools)"
 else
