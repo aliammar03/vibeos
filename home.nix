@@ -18,7 +18,7 @@
   # /etc/shells registration.
   programs.zsh.enable = true;
   programs.zsh.enableCompletion = true;
-  programs.zsh.autosuggestions.enable = true;
+  programs.zsh.autosuggestion.enable = true;
   programs.zsh.syntaxHighlighting.enable = true;
   # eza's module sets `ll = "eza -l"` by default; override to match what
   # we were using before this migration.
