@@ -129,10 +129,19 @@ git -C "$TASKDIR/repo" checkout -q -b "task/$SLUG"
 
 cp "$SYSTEM_MD" "$TASKDIR/SYSTEM.md"
 
-# Hand the whole tree to the worker. Group stays 'pitasks' so you can still
-# read it for review; the setgid bit on $TASKS_ROOT keeps new files that way.
-sudo chown -R "$WORKER_USER:pitasks" "$TASKDIR"
-sudo chmod -R g+rX "$TASKDIR"
+# Ownership split, deliberately:
+#   $TASKDIR       stays yours, group-writable  -> you can write the transcript
+#                                                  here, the worker can drop its
+#                                                  result bundle here
+#   $TASKDIR/repo  goes to the worker           -> it edits and commits freely
+#
+# You must never run `git` *inside* $TASKDIR/repo. It is a repository the
+# worker controls, and git reads configuration from the repo it operates on --
+# `uploadpack.packObjectsHook` in a hostile .git/config executes commands on
+# fetch. Extraction happens through a bundle (see below), which is inert data.
+chmod 2770 "$TASKDIR"
+sudo chown -R "$WORKER_USER:pitasks" "$TASKDIR/repo"
+sudo chmod -R g+rX "$TASKDIR/repo"
 
 # ── Run the worker ───────────────────────────────────────────────────────
 
@@ -170,12 +179,19 @@ fi
 
 # ── Review gates ─────────────────────────────────────────────────────────
 # Everything below is the planner's check, not the worker's claim.
+#
+# All git inspection runs AS THE WORKER (`sudo -u`), for two reasons: the repo
+# is worker-owned so git would otherwise refuse with "dubious ownership", and
+# we do not want your uid executing anything git reads out of that repo.
 
-mapfile -t CHANGED < <(
-  { git -C "$TASKDIR/repo" diff --name-only "$BASE"
-    git -C "$TASKDIR/repo" ls-files --others --exclude-standard
-  } | sort -u
-)
+# Commit whatever the worker left behind, so the result is capturable whether
+# or not it thought to commit. `git add -A` also picks up new files.
+sudo -u "$WORKER_USER" git -C "$TASKDIR/repo" add -A
+sudo -u "$WORKER_USER" git -C "$TASKDIR/repo" \
+  -c user.name='pi worker' -c user.email='piworker@localhost' \
+  commit -q -m "delegated: $SLUG" >/dev/null 2>&1 || true
+
+mapfile -t CHANGED < <(sudo -u "$WORKER_USER" git -C "$TASKDIR/repo" diff --name-only "$BASE" | sort -u)
 
 if (( ${#CHANGED[@]} == 0 )); then
   die "worker changed nothing. Read $TASKDIR/pi-output.log to see why."
@@ -205,7 +221,7 @@ fi
 
 # Gate 2: the locks from CLAUDE.md. The worker has no sudo so it cannot
 # activate anything, but it can still edit these lines in the config.
-if git -C "$TASKDIR/repo" diff "$BASE" -- . \
+if sudo -u "$WORKER_USER" git -C "$TASKDIR/repo" diff "$BASE" \
      | grep -nE '^\+.*(wsl\.|system\.stateVersion|security\.sudo|privilegedAutomation)' ; then
   printf '\n\033[31mGUARDRAIL HIT\033[0m — diff touches a protected option above. Review carefully.\n'
 fi
@@ -228,16 +244,25 @@ else
   printf '\033[31mACCEPTANCE FAILED\033[0m rc=%s — do not trust the worker'"'"'s summary.\n' "$ACCEPT_RC"
 fi
 
+# Export the work as a bundle. A bundle is inert data: fetching from it does
+# not read the worker's .git/config, so none of that repo's hooks or
+# pack-objects settings can execute in your session.
+BUNDLE="$TASKDIR/result.bundle"
+sudo -u "$WORKER_USER" git -C "$TASKDIR/repo" bundle create "$BUNDLE" "$BASE..task/$SLUG" 2>/dev/null \
+  && note "result bundle: $BUNDLE" \
+  || printf '\033[33mwarning:\033[0m could not create bundle (no new commits?)\n'
+
 cat <<EOF
 
-Review the diff from your own repo:
+Review the diff from your own repo (safe -- bundle, not the worker's repo):
 
-  git -C $REPO_SRC fetch $TASKDIR/repo task/$SLUG
-  git -C $REPO_SRC diff HEAD...FETCH_HEAD
+  git -C $REPO_SRC fetch $BUNDLE 'task/$SLUG:refs/delegate/$SLUG'
+  git -C $REPO_SRC diff HEAD...refs/delegate/$SLUG
 
 Take the work if you want it:
 
-  git -C $REPO_SRC cherry-pick ..FETCH_HEAD    # or: git merge FETCH_HEAD
+  git -C $REPO_SRC merge --ff-only refs/delegate/$SLUG
+  # or, to keep your own message:  git -C $REPO_SRC cherry-pick HEAD..refs/delegate/$SLUG
 
 EOF
 
