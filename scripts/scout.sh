@@ -130,12 +130,21 @@ git -C "$REPO_SRC" ls-files -co --exclude-standard -z \
   | while IFS= read -r -d '' f; do [[ -e $REPO_SRC/$f ]] && printf '%s\0' "$f"; done \
   | rsync -a --from0 --files-from=- "$REPO_SRC/" "$RUNDIR/repo/"
 
+# `rsync -a` preserves the *source* group, and as a non-root user that stamps
+# your primary group ("users") onto every copied path -- overriding the setgid
+# pitasks inheritance. Directories then read as aliammar:users, which piworker
+# is not in, so it can traverse nothing below the top level and silently reports
+# on whatever it could reach. Set the group back explicitly.
+chgrp -R pitasks "$RUNDIR/repo"
+
 # Strip write permission from everything, then give the directories back to us
 # only -- a directory needs its write bit to have entries removed, so without
 # this second step you could not clean the snapshot up. The worker ends with
-# r-x on directories and r-- on files: it cannot edit, create, or delete.
+# r-x on directories and r-- on files: it can read everything, and cannot edit,
+# create, or delete anything. Nobody outside the pitasks group gets in at all.
 chmod -R a-w "$RUNDIR/repo"
-find "$RUNDIR/repo" -type d -exec chmod u+wx,g-w,o-rwx {} +
+find "$RUNDIR/repo" -type d -exec chmod u+wx,g+rx,g-w,o-rwx {} +
+find "$RUNDIR/repo" ! -type d -exec chmod g+r,o-rwx {} +
 
 # ── Prompt ───────────────────────────────────────────────────────────────
 
