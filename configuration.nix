@@ -14,6 +14,7 @@
   users.users.aliammar = {
     isNormalUser = true;
     extraGroups = [ "wheel" ];
+    shell = pkgs.zsh;
   };
 
   # Passwordless sudo on this single-user WSL box (delete to require a password)
@@ -28,7 +29,33 @@
     ripgrep # fast recursive grep (`rg`)
     fd # fast, user-friendly `find` alternative
     bat # `cat` with syntax highlighting
+    zellij # terminal multiplexer
+    fzf # fuzzy finder
+    eza # modern `ls` (aliased below)
+    delta # syntax-highlighting pager for `git diff`
+    btop # resource monitor
   ];
+
+  # Modern terminal environment: zsh + starship + zoxide, aliases for eza.
+  programs.zsh.enable = true;
+  programs.zsh.enableCompletion = true;
+  programs.zsh.autosuggestions.enable = true;
+  programs.zsh.syntaxHighlighting.enable = true;
+
+  programs.starship.enable = true;
+
+  programs.zoxide.enable = true;
+  programs.zoxide.enableZshIntegration = true;
+
+  programs.fzf.keybindings = true;
+  programs.fzf.fuzzyCompletion = true;
+
+  environment.shellAliases = {
+    ls = "eza";
+    ll = "eza -la";
+    la = "eza -a";
+    lt = "eza --tree";
+  };
 
   # nix-agent: MCP server exposing NixOS build/diff/switch/rollback to Claude.
   # Module comes from the nix-agent flake input (see flake.nix).
