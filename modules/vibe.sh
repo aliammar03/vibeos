@@ -128,6 +128,6 @@ fi
 
 # ── tip of the login ──────────────────────────────────────────────────────
 tip="${TIPS[$((RANDOM % ${#TIPS[@]}))]}"
-printf '  %s✳%s %stip%s %s·%s %s%s%s\n\n' \
+printf '  %s✳%s %stip%s %s·%s %s%s%s\n' \
   "$PEACH" "$RESET" "$GREEN" "$RESET" "$SURFACE" "$RESET" \
   "$SUBTEXT" "$tip" "$RESET"
