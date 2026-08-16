@@ -20,6 +20,15 @@
     # WSL shell, otherwise you'll still get "permission denied" there.
     extraGroups = [ "wheel" "pitasks" ];
     shell = pkgs.zsh;
+
+    # Public keys allowed to SSH in (see the SSH section below).
+    # Public keys are not secrets — keeping them in git is the point, so
+    # this box's access list is reviewable in the config rather than
+    # hidden in a dotfile. Paste in the contents of the *.pub file from
+    # the Ubuntu machine, keeping the whole single line.
+    openssh.authorizedKeys.keys = [
+      # "ssh-ed25519 AAAAC3Nz... ali@ubuntu"
+    ];
   };
 
   # Passwordless sudo on this single-user WSL box (delete to require a password)
@@ -128,6 +137,45 @@
   # of these lines if that global setting stays.
   programs.nix-agent.privilegedAutomation.enable = true;
   programs.nix-agent.privilegedAutomation.user = "aliammar";
+
+  # ── SSH server (inbound) ─────────────────────────────────────────────
+  # Lets you `ssh aliammar@<this box>` from another machine. The outbound
+  # direction (ssh FROM here) needs no config — the client ships with NixOS.
+  #
+  # Three WSL-specific things, because they're the parts that bite:
+  #
+  #   1. The Windows-side .wslconfig sets networkingMode=mirrored, so this
+  #      VM shares the Windows host's LAN address instead of sitting behind
+  #      WSL's usual NAT. That means NO `netsh interface portproxy` rule is
+  #      needed — port 22 here is reachable as port 22 on the host's IP.
+  #      If mirrored mode is ever turned off, that changes and forwarding
+  #      becomes necessary again.
+  #   2. .wslconfig also sets firewall=true, so inbound packets are filtered
+  #      by the *Hyper-V* firewall, which is separate from both the ordinary
+  #      Windows firewall and the NixOS one below. It needs its own rule
+  #      (New-NetFirewallHyperVRule) on the Windows side, once.
+  #   3. sshd only runs while the distro is running. Close every WSL window
+  #      and Windows eventually shuts the VM down, taking sshd with it —
+  #      this is not a machine that answers SSH while nobody's logged in.
+  services.openssh.enable = true;
+
+  # Keys only, no passwords. Both of these matter: turning off
+  # PasswordAuthentication alone still leaves keyboard-interactive, which is
+  # a separate auth path that can also reach PAM and accept a password.
+  services.openssh.settings.PasswordAuthentication = false;
+  services.openssh.settings.KbdInteractiveAuthentication = false;
+  services.openssh.settings.PermitRootLogin = "no";
+
+  # Only you. Without this the delegated worker account (piworker, above)
+  # would also be a valid SSH target — and that account exists specifically
+  # to be an isolation boundary, so letting it be reachable over the
+  # network works against the reason it exists.
+  services.openssh.settings.AllowUsers = [ "aliammar" ];
+
+  # Opens port 22 in the NixOS firewall. This is already the default; it's
+  # spelled out because it's only one of the three firewalls in play here
+  # (see note 2 above) and the explicit line makes that easier to remember.
+  services.openssh.openFirewall = true;
 
   networking.hostName = "vibeos";
 
