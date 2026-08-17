@@ -245,6 +245,12 @@ if [[ -z ${REPORT//[[:space:]]/} ]]; then
   if [[ -n ${ERR//[[:space:]]/} ]]; then
     printf '\nProvider error (after auto-retries):\n' >&2
     head -3 <<<"$ERR" | cut -c1-300 >&2
+  elif jq -es 'any(.[]; .type == "message_end" and .message.stopReason == "error")' \
+         "$RUNDIR/transcript.jsonl" >/dev/null 2>&1; then
+    # A model your key cannot reach fails exactly like this: one empty assistant
+    # message, stopReason "error", and no error text anywhere in the stream.
+    printf '\nThe model returned an error with no message — usually a model your\n' >&2
+    printf 'key cannot reach. Try a different --model (%s was requested).\n' "$MODEL" >&2
   fi
   if [[ -s $RUNDIR/stderr.log ]]; then
     printf '\nLast lines of stderr:\n' >&2
