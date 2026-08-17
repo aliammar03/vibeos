@@ -47,6 +47,10 @@ report what you delegated and what came back.
   model — a cheap worker there just produces a bad diff you have to review.
 - Needs the `pitasks` group in the calling shell; use `sg pitasks -c '...'` if the
   session predates it.
+- If a worker fails with `429 ... rate-limited upstream`, check
+  https://openrouter.ai/settings/privacy before suspecting credits. A strict data
+  policy can shrink a model's provider pool to one, leaving nothing to fall back
+  to when that provider saturates.
 
 ## Every change, in order
 1. Verify every package/option name via the `nixos` MCP server before writing it.
