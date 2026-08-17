@@ -203,17 +203,28 @@ ELAPSED=$(( SECONDS - START ))
 # The final assistant message is the report; --full widens that to every
 # assistant message, i.e. the reasoning between tool calls. Either way the tool
 # calls themselves stay in the transcript, which is the whole point.
+#
+# There can be several `agent_end` events, not one: pi emits a fresh
+# agent_start/agent_end pair for every auto-retry, and a retry that dies on a
+# provider error contributes an empty one. So take the last agent_end that
+# actually carries text, rather than the last one that exists.
 
 if (( FULL )); then
-  JQ_SELECT='.[]'
+  JQ_PICK='.[]'
 else
-  JQ_SELECT='last'
+  JQ_PICK='last'
 fi
 
 REPORT=$(jq -rs "
-  [.[] | select(.type == \"agent_end\")] | last
-  | .messages // [] | map(select(.role == \"assistant\")) | $JQ_SELECT
-  | .content // [] | map(select(.type == \"text\") | .text) | join(\"\n\")
+  [ .[]
+    | select(.type == \"agent_end\")
+    | [ (.messages // [])[] | select(.role == \"assistant\") ]
+    | select(length > 0)
+    | [ $JQ_PICK ]
+    | [ .[] | (.content // [])[] | select(.type == \"text\") | .text ]
+    | join(\"\n\")
+    | select(length > 0)
+  ] | last // \"\"
 " "$RUNDIR/transcript.jsonl" 2>/dev/null | sed '/^$/N;/^\n$/D') || REPORT=""
 
 if [[ -z ${REPORT//[[:space:]]/} ]]; then
@@ -224,6 +235,16 @@ if [[ -z ${REPORT//[[:space:]]/} ]]; then
     printf 'Narrow the question or raise --timeout.\n' >&2
   else
     printf '\033[31mSCOUT PRODUCED NO REPORT\033[0m (exit %s).\n' "$RC" >&2
+  fi
+  # Provider failures (rate limits especially) are reported inside the JSON
+  # stream, not on stderr -- so without this you get "no report" and no reason,
+  # and the reason is usually "retry in a minute".
+  ERR=$(jq -rs '[.[] | select(.type | startswith("auto_retry"))
+                     | (.finalError // .errorMessage // empty)] | last // empty' \
+        "$RUNDIR/transcript.jsonl" 2>/dev/null || true)
+  if [[ -n ${ERR//[[:space:]]/} ]]; then
+    printf '\nProvider error (after auto-retries):\n' >&2
+    head -3 <<<"$ERR" | cut -c1-300 >&2
   fi
   if [[ -s $RUNDIR/stderr.log ]]; then
     printf '\nLast lines of stderr:\n' >&2
