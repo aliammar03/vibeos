@@ -28,6 +28,27 @@ Two triggers. When one fires, act on it — I should not have to ask you to:
 Delegating is the default for that work, not a suggestion to raise with me. Just
 report what you delegated and what came back.
 
+**This paragraph is not enough on its own, and we measured that.** An audit of
+21 sessions found 11 of 15 tool-using sessions delegated nothing at all — not
+because the rule was disputed, but because it is a turn-0 instruction and the
+decision happens 100 turns later. `scripts/delegation-guard.sh` runs as a hook
+and enforces it: a nudge at 3 exploration reads, a hard block at 6. Re-measure
+with `scripts/delegation-audit.sh`.
+
+### Which target gets the work
+
+| Situation | Send it to | Why |
+|---|---|---|
+| Surveying: "where is X", "how does Y flow", unfamiliar files | `./scripts/scout.sh "<question>"` | ~18× cheaper per token, and the file contents never enter my context |
+| Needs evaluation, not just reading (`nix eval`, a build) | `./scripts/scout.sh` | It has bash on a read-only snapshot |
+| Mechanical edit with a checkable done | `./scripts/delegate.sh` | Acceptance command is re-run independently |
+| In-harness search, no OpenRouter dependency | `Explore` subagent | Same context-firewall effect; ask me first, per the standing no-subagents rule |
+| Close reading of a file you're about to change | **Do it yourself** | Summaries lose the detail you're about to edit; delegating here causes silent misdirection |
+| Debugging a weird failure, architecture, ambiguity | **Do it yourself** | A cheap worker produces a confident wrong answer you then have to unpick |
+
+The split that matters is **sampling vs close reading**. Delegate what you would
+skim; keep what you would study.
+
 - Scouting: the question is the whole argument — no brief file, no slug, nothing
   to clean up. You get an ANSWER / EVIDENCE / GAPS report with `file:line`
   citations; the scout's transcript stays on disk, which is the point. Open the
