@@ -170,6 +170,16 @@ set -e
 
 note "worker exited with status $WORKER_RC (full transcript: $TASKDIR/pi-output.log)"
 
+# A worker that died partway through still leaves whatever it had written, and
+# that partial edit can pass acceptance -- a half-finished comment change builds
+# fine. Acceptance proves the tree is valid, not that the task was finished, so
+# say plainly that the diff below may be half a task.
+if (( WORKER_RC != 0 )); then
+  printf '\n\033[33mWORKER DID NOT FINISH CLEANLY\033[0m (exit %s) — it may have stopped mid-task.\n' "$WORKER_RC"
+  printf 'A partial edit can still build and pass acceptance. Read the diff for completeness,\n'
+  printf 'not just correctness, and check the end of %s for why it stopped.\n' "$TASKDIR/pi-output.log"
+fi
+
 # ── Review gates ─────────────────────────────────────────────────────────
 # Everything below is the planner's check, not the worker's claim.
 #
